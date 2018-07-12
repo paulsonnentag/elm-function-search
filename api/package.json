@@ -1,0 +1,31 @@
+{
+  "name": "elm-function-search",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paulsonnentag/elm-function-search.git"
+  },
+  "author": "Paul Sonnentag <Paul.Sonnentag@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/paulsonnentag/elm-function-search/issues"
+  },
+  "homepage": "https://github.com/paulsonnentag/elm-function-search#readme",
+  "dependencies": {
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "express-graphql": "^0.6.12",
+    "graphql": "^0.13.2",
+    "lodash": "^4.17.10",
+    "neo4j-driver": "^1.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.1"
+  }
+}
