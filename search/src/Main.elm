@@ -1,12 +1,70 @@
 module Main exposing (..)
 
-import Html exposing (Html, div, text, ul, li, input)
-import Html.Attributes exposing (src, value, placeholder, style)
-import Html.Events exposing (onInput, onClick)
 import Http
 import Time
 import HttpBuilder exposing (withQueryParams, withExpectJson, withTimeout, toRequest)
 import Json.Decode as Decode exposing (Decoder, string, field, list)
+import Style
+import Element.Attributes exposing (attribute, padding, paddingBottom, spacing)
+import Element exposing (Element, h1, el, column, text)
+import Element.Events exposing (onClick)
+import Element.Input as Input
+import Style.Font as Font
+import Style.Color as Color
+import Style.Border as Border
+import Html exposing (Html)
+import Style.Scale as Scale
+import Color
+
+
+--- STYLES ---
+
+
+type Styles
+    = App
+    | Title
+    | SearchInput
+    | ResultItems
+    | ResultItem
+    | ResultItemSymbol
+    | ResultItemPackage
+    | None
+
+
+scale : Int -> Float
+scale =
+    Scale.modular 16 1.3
+
+
+stylesheet : Style.StyleSheet Styles variation
+stylesheet =
+    Style.styleSheet
+        [ Style.style App
+            [ Font.typeface [ Font.sansSerif ]
+            , Font.size (scale 1)
+            ]
+        , Style.style Title
+            [ Font.size (scale 3) ]
+        , Style.style SearchInput
+            [ Font.size (scale 2)
+            , Border.all 1
+            , Color.border Color.black
+            ]
+        , Style.style ResultItem
+            [ Border.left 1
+            , Border.right 1
+            , Border.bottom 1
+            , Color.border Color.black
+            ]
+        , Style.style ResultItemSymbol
+            [ Font.size (scale 2)
+            ]
+        , Style.style ResultItemPackage
+            [ Color.text (Color.rgb 50 50 50) ]
+        , Style.style None []
+        , Style.style ResultItems []
+        ]
+
 
 
 ---- MODEL ----
@@ -126,37 +184,50 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ input
-            [ onInput ChangeQuery
-            , value (queryValue model)
-            , placeholder "try elm-lang/core or List.map"
-            , style [ ( "width", "100%" ), ( "font-size", "20px" ) ]
-            ]
-            []
-        , case model of
-            Search { query, matches } ->
-                div []
-                    [ case matches of
+    Element.layout stylesheet <|
+        column App
+            [ padding (scale 3) ]
+            [ h1 Title [ paddingBottom (scale 2) ] (text "Elm function search")
+            , Input.text SearchInput
+                [ attribute "autofocus" ""
+                , padding 5
+                ]
+                { onChange = ChangeQuery
+                , value = (queryValue model)
+                , label =
+                    Input.placeholder
+                        { label = Input.labelLeft (el None [ attribute "style" "display:none;" ] (text "Search"))
+                        , text = "Try List.map or elm-lang/Http"
+                        }
+                , options = []
+                }
+            , case model of
+                Search { query, matches } ->
+                    case matches of
                         Failed err ->
                             text err
 
                         Success symbols ->
-                            ul []
-                                (List.map
-                                    (\symbol ->
-                                        li [ onClick (LoadExamples symbol) ]
-                                            [ (text (symbol.module_ ++ "." ++ symbol.name ++ " (" ++ symbol.package ++ ")")) ]
-                                    )
-                                    symbols
-                                )
+                            column ResultItems
+                                []
+                                (List.map resultItemView symbols)
 
                         Loading ->
                             text "loading ..."
-                    ]
 
-            _ ->
-                text "todo add examples"
+                _ ->
+                    text "todo add examples"
+            ]
+
+
+resultItemView : Symbol -> Element Styles variation Msg
+resultItemView symbol =
+    column ResultItem
+        [ onClick (LoadExamples symbol)
+        , padding 5
+        ]
+        [ el ResultItemPackage [] (text symbol.package)
+        , el ResultItemSymbol [] (text (symbol.module_ ++ "." ++ symbol.name))
         ]
 
 
