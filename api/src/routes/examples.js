@@ -1,42 +1,61 @@
-const _ = require('lodash/fp')
 const express = require('express')
 const router = express.Router()
+const {session} = require('../db')
 
-router.get('/:owner/:repo/:module/:function', (req, res) => {
+router.get('/', (req, res) => {
+  const {package, module, symbol} = req.query
 
-  cors(async (req, res) => {
-    const params = req.query
+  if (!package) {
+    res
+      .status(400)
+      .send(`Please specify the 'package' of the symbol`)
+    return
+  }
 
-    if (!params.module) {
-      res
-        .status(400)
-        .send(`Please specify the 'module' you want to search in`)
-      return
-    }
+  if (!module) {
+    res
+      .status(400)
+      .send(`Please specify the 'module' of the symbol`)
+    return
+  }
 
-    if (!params.function) {
-      res
-        .status(400)
-        .send(`Please specify the 'function' you want to search for`)
-      return
-    }
+  if (!symbol) {
+    res
+      .status(400)
+      .send(`Please specify the 'symbol'`)
+    return
+  }
 
-    const invalidKeys = _.without(['module', 'function', 'version'], _.keys(params))
+  findExamples({ package, module, symbol })
+    .then(examples => {
+      console.log(examples)
 
-    if (invalidKeys.length > 0) {
-      res
-        .status(400)
-        .send(`These parameters are not allowed: ${invalidKeys.join(',')}`)
-      return
-    }
-
-    const module = params.module
-    const func = params.function
-    const version = params.version
-
-    return send(res, 200, {module, func, version})
-  })
-
+      res.send(examples)
+    })
 })
+
+
+async function findExamples ({ package, module, symbol}) {
+  const {records} = await session.run(`
+    MATCH
+      (module:File)-[:DEFINES_SYMBOL]->(symbol:Symbol),
+      (refRepo:Repo)-[:HAS_FILE]->(:File)-[ref:REFERENCES_SYMBOL]->(symbol)
+    WHERE
+      module.module = $package + '/' + $module AND
+      symbol.name = $symbol
+    RETURN DISTINCT
+      refRepo.id AS repo, ref.url AS url
+    LIMIT 100
+  `,
+    {package, module, symbol}
+  )
+
+  return records.map((row) => {
+    return {
+      repo: row.get('repo'),
+      url: row.get('url'),
+    }
+  })
+}
 
 module.exports = router

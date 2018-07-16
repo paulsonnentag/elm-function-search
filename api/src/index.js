@@ -9,7 +9,7 @@ app.use(cors())
 
 app.set('json spaces', 2);
 
-app.use('/symbols', symbols)
-//app.get('/examples' examples)
+app.use('/symbols', symbols);
+app.use('/examples', examples);
 
-app.listen(3000)
+app.listen(3000);

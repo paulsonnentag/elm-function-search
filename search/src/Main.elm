@@ -7,7 +7,7 @@ import Json.Decode as Decode exposing (Decoder, string, field, list, bool)
 import Json.Encode as Encode
 import Style
 import Element.Attributes exposing (attribute, property, padding, paddingBottom, paddingTop, spacing, vary)
-import Element exposing (Element, h1, h2, el, column, text)
+import Element exposing (Element, h1, h2, el, column, text, newTab)
 import Element.Events exposing (onClick, on, keyCode)
 import Element.Input as Input
 import Style.Font as Font
@@ -43,6 +43,7 @@ type alias ExamplesModel =
     { package : String
     , module_ : String
     , symbol : String
+    , examples : RemoteData (List Example)
     }
 
 
@@ -80,6 +81,32 @@ symbol =
         (field "package" string)
 
 
+examplesRequest : Symbol -> Http.Request (List Example)
+examplesRequest { package, module_, name } =
+    HttpBuilder.get "http://localhost:3000/examples"
+        |> withQueryParams
+            [ ( "package", package )
+            , ( "module", module_ )
+            , ( "symbol", name )
+            ]
+        |> withTimeout (Time.second * 5)
+        |> withExpectJson (list example)
+        |> toRequest
+
+
+type alias Example =
+    { repo : String
+    , url : String
+    }
+
+
+example : Decoder Example
+example =
+    Decode.map2 Example
+        (field "repo" string)
+        (field "url" string)
+
+
 
 ---- UPDATE ----
 
@@ -87,7 +114,8 @@ symbol =
 type Msg
     = ChangeQuery String
     | LoadMatches (Result Http.Error (List Symbol))
-    | LoadExamples Symbol
+    | GotoExamples Symbol
+    | LoadExamples (Result Http.Error (List Example))
     | KeyPressed KeyAction
 
 
@@ -118,13 +146,14 @@ update msg model =
                                 Ok matches ->
                                     ( Search { model | result = (Success (ListSelection.fromList matches)) }, Cmd.none )
 
-                        LoadExamples symbol ->
+                        GotoExamples symbol ->
                             ( Examples
                                 { package = symbol.package
                                 , module_ = symbol.module_
                                 , symbol = symbol.name
+                                , examples = Loading
                                 }
-                            , Cmd.none
+                            , Http.send LoadExamples (examplesRequest symbol)
                             )
 
                         KeyPressed keyAction ->
@@ -158,8 +187,9 @@ update msg model =
                                                         { package = symbol.package
                                                         , module_ = symbol.module_
                                                         , symbol = symbol.name
+                                                        , examples = Loading
                                                         }
-                                                    , Cmd.none
+                                                    , Http.send LoadExamples (examplesRequest symbol)
                                                     )
 
                                         NoOp ->
@@ -172,7 +202,17 @@ update msg model =
                             ( Search model, Cmd.none )
 
                 Examples model ->
-                    ( Examples model, Cmd.none )
+                    case msg of
+                        LoadExamples result ->
+                            case result of
+                                Err err ->
+                                    ( Examples { model | examples = (Failed (toString err)) }, Cmd.none )
+
+                                Ok examples ->
+                                    ( Examples { model | examples = Success examples }, Cmd.none )
+
+                        _ ->
+                            ( Examples model, Cmd.none )
 
 
 
@@ -283,7 +323,7 @@ view model =
                         Loading ->
                             text "loading ..."
 
-                Examples { package, module_, symbol } ->
+                Examples { package, module_, symbol, examples } ->
                     column None
                         []
                         [ h2 Subtitle
@@ -291,6 +331,22 @@ view model =
                             , paddingTop (scale 1)
                             ]
                             (text "Examples")
+                        , case examples of
+                            Loading ->
+                                text "loading..."
+
+                            Failed err ->
+                                text err
+
+                            Success examples ->
+                                column None
+                                    []
+                                    (List.map
+                                        (\{ url } ->
+                                            newTab url (text url)
+                                        )
+                                        examples
+                                    )
                         ]
             ]
 
@@ -325,7 +381,7 @@ decodeKey =
 resultItemView : Maybe Symbol -> Symbol -> Element Styles Variation Msg
 resultItemView selectedSymbol symbol =
     column ResultItem
-        [ onClick (LoadExamples symbol)
+        [ onClick (GotoExamples symbol)
         , padding 5
         , vary Selected (Just symbol == selectedSymbol)
         ]
