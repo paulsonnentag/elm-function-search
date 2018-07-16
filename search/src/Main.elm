@@ -3,11 +3,11 @@ module Main exposing (..)
 import Http
 import Time
 import HttpBuilder exposing (withQueryParams, withExpectJson, withTimeout, toRequest)
-import Json.Decode as Decode exposing (Decoder, string, field, list)
+import Json.Decode as Decode exposing (Decoder, string, field, list, bool)
 import Style
-import Element.Attributes exposing (attribute, padding, paddingBottom, spacing)
+import Element.Attributes exposing (attribute, padding, paddingBottom, spacing, vary)
 import Element exposing (Element, h1, el, column, text)
-import Element.Events exposing (onClick)
+import Element.Events exposing (onClick, on, keyCode)
 import Element.Input as Input
 import Style.Font as Font
 import Style.Color as Color
@@ -15,56 +15,7 @@ import Style.Border as Border
 import Html exposing (Html)
 import Style.Scale as Scale
 import Color
-
-
---- STYLES ---
-
-
-type Styles
-    = App
-    | Title
-    | SearchInput
-    | ResultItems
-    | ResultItem
-    | ResultItemSymbol
-    | ResultItemPackage
-    | None
-
-
-scale : Int -> Float
-scale =
-    Scale.modular 16 1.3
-
-
-stylesheet : Style.StyleSheet Styles variation
-stylesheet =
-    Style.styleSheet
-        [ Style.style App
-            [ Font.typeface [ Font.sansSerif ]
-            , Font.size (scale 1)
-            ]
-        , Style.style Title
-            [ Font.size (scale 3) ]
-        , Style.style SearchInput
-            [ Font.size (scale 2)
-            , Border.all 1
-            , Color.border Color.black
-            ]
-        , Style.style ResultItem
-            [ Border.left 1
-            , Border.right 1
-            , Border.bottom 1
-            , Color.border Color.black
-            ]
-        , Style.style ResultItemSymbol
-            [ Font.size (scale 2)
-            ]
-        , Style.style ResultItemPackage
-            [ Color.text (Color.rgb 50 50 50) ]
-        , Style.style None []
-        , Style.style ResultItems []
-        ]
-
+import ListSelection exposing (ListSelection)
 
 
 ---- MODEL ----
@@ -76,10 +27,6 @@ type RemoteData data
     | Success data
 
 
-type alias Matches =
-    RemoteData (List Symbol)
-
-
 type Model
     = Search SearchModel
     | Examples ExamplesModel
@@ -87,7 +34,7 @@ type Model
 
 type alias SearchModel =
     { query : String
-    , matches : Matches
+    , result : RemoteData (ListSelection Symbol)
     }
 
 
@@ -100,7 +47,7 @@ type alias ExamplesModel =
 
 initialModel : Model
 initialModel =
-    Search { query = "", matches = Success [] }
+    Search { query = "", result = Success (ListSelection.fromList []) }
 
 
 init : ( Model, Cmd Msg )
@@ -140,13 +87,21 @@ type Msg
     = ChangeQuery String
     | LoadMatches (Result Http.Error (List Symbol))
     | LoadExamples Symbol
+    | KeyPressed KeyAction
+
+
+type KeyAction
+    = Prev
+    | Next
+    | Select
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ChangeQuery query ->
-            ( Search { query = query, matches = Loading }
+            ( Search { query = query, result = Loading }
             , Http.send LoadMatches (searchRequest query)
             )
 
@@ -157,10 +112,10 @@ update msg model =
                         LoadMatches result ->
                             case result of
                                 Err err ->
-                                    ( Search { model | matches = (Failed (toString err)) }, Cmd.none )
+                                    ( Search { model | result = (Failed (toString err)) }, Cmd.none )
 
                                 Ok matches ->
-                                    ( Search { model | matches = (Success matches) }, Cmd.none )
+                                    ( Search { model | result = (Success (ListSelection.fromList matches)) }, Cmd.none )
 
                         LoadExamples symbol ->
                             ( Examples
@@ -171,11 +126,111 @@ update msg model =
                             , Cmd.none
                             )
 
+                        KeyPressed keyAction ->
+                            case model.result of
+                                Success selection ->
+                                    case keyAction of
+                                        Next ->
+                                            ( Search
+                                                { model
+                                                    | result = Success (ListSelection.next selection)
+                                                }
+                                            , Cmd.none
+                                            )
+
+                                        Prev ->
+                                            -- UP
+                                            ( Search
+                                                { model
+                                                    | result = Success (ListSelection.prev selection)
+                                                }
+                                            , Cmd.none
+                                            )
+
+                                        Select ->
+                                            case ListSelection.getSelectedItem selection of
+                                                Nothing ->
+                                                    ( Search model, Cmd.none )
+
+                                                Just symbol ->
+                                                    ( Examples
+                                                        { package = symbol.package
+                                                        , module_ = symbol.module_
+                                                        , symbol = symbol.name
+                                                        }
+                                                    , Cmd.none
+                                                    )
+
+                                        NoOp ->
+                                            ( Search model, Cmd.none )
+
+                                _ ->
+                                    ( Search model, Cmd.none )
+
                         _ ->
                             ( Search model, Cmd.none )
 
                 Examples model ->
                     ( Examples model, Cmd.none )
+
+
+
+--- STYLES ---
+
+
+type Styles
+    = App
+    | Title
+    | SearchInput
+    | ResultItems
+    | ResultItem
+    | ResultItemSymbol
+    | ResultItemPackage
+    | None
+
+
+type Variation
+    = Selected
+
+
+scale : Int -> Float
+scale =
+    Scale.modular 16 1.3
+
+
+stylesheet : Style.StyleSheet Styles Variation
+stylesheet =
+    Style.styleSheet
+        [ Style.style App
+            [ Font.typeface [ Font.sansSerif ]
+            , Font.size (scale 1)
+            ]
+        , Style.style Title
+            [ Font.size (scale 3) ]
+        , Style.style SearchInput
+            [ Font.size (scale 2)
+            , Border.all 1
+            , Color.border Color.black
+            ]
+        , Style.style ResultItem
+            [ Border.left 1
+            , Border.right 1
+            , Border.bottom 1
+            , Color.border Color.black
+            , Style.hover
+                [ Color.background Color.lightBlue
+                ]
+            , Style.variation Selected
+                [ Color.background Color.lightBlue ]
+            ]
+        , Style.style ResultItemSymbol
+            [ Font.size (scale 2)
+            ]
+        , Style.style ResultItemPackage
+            [ Color.text (Color.rgb 50 50 50) ]
+        , Style.style None []
+        , Style.style ResultItems []
+        ]
 
 
 
@@ -191,9 +246,11 @@ view model =
             , Input.text SearchInput
                 [ attribute "autofocus" ""
                 , padding 5
+
+                --, on "keyup" (Decode.map KeyPressed decodeKey)
                 ]
                 { onChange = ChangeQuery
-                , value = (queryValue model)
+                , value = "123" -- (queryValue model)
                 , label =
                     Input.placeholder
                         { label = Input.labelLeft (el None [ attribute "style" "display:none;" ] (text "Search"))
@@ -202,29 +259,64 @@ view model =
                 , options = []
                 }
             , case model of
-                Search { query, matches } ->
-                    case matches of
+                Search { query, result } ->
+                    case result of
                         Failed err ->
                             text err
 
-                        Success symbols ->
-                            column ResultItems
-                                []
-                                (List.map resultItemView symbols)
+                        Success selection ->
+                            let
+                                items =
+                                    ListSelection.getItems selection
+
+                                selectedItem =
+                                    ListSelection.getSelectedItem selection
+                            in
+                                column ResultItems
+                                    []
+                                    (List.map (resultItemView selectedItem) items)
 
                         Loading ->
                             text "loading ..."
 
-                _ ->
-                    text "todo add examples"
+                Examples { package, module_, symbol } ->
+                    text ((queryValue model))
             ]
 
 
-resultItemView : Symbol -> Element Styles variation Msg
-resultItemView symbol =
+decodeKey : Decoder KeyAction
+decodeKey =
+    Decode.map2
+        (\key withCtrl ->
+            case ( key, withCtrl ) of
+                ( "ArrowUp", _ ) ->
+                    Prev
+
+                ( "ArrowDown", _ ) ->
+                    Next
+
+                ( "Enter", _ ) ->
+                    Select
+
+                ( "p", true ) ->
+                    Prev
+
+                ( "n", true ) ->
+                    Next
+
+                _ ->
+                    NoOp
+        )
+        (field "key" string)
+        (field "ctrlKey" bool)
+
+
+resultItemView : Maybe Symbol -> Symbol -> Element Styles Variation Msg
+resultItemView selectedSymbol symbol =
     column ResultItem
         [ onClick (LoadExamples symbol)
         , padding 5
+        , vary Selected (Just symbol == selectedSymbol)
         ]
         [ el ResultItemPackage [] (text symbol.package)
         , el ResultItemSymbol [] (text (symbol.module_ ++ "." ++ symbol.name))
