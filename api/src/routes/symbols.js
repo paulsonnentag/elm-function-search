@@ -22,10 +22,11 @@ router.get('/', async (req, res) => {
 async function findMatchingSymbols (query) {
   const {records} = await session.run(`
     MATCH
-      (repo:Repo)-[:HAS_FILE]->(file:File)-[:DEFINES_SYMBOL]->(symbol:Symbol)
+      (file:File)-[:DEFINES_SYMBOL]->(symbol:Symbol)
     WHERE
-      symbol.id CONTAINS $query
-    RETURN
+      (file.module + "." + symbol.name) STARTS with $query OR
+      symbol.name STARTS with $query
+    RETURN DISTINCT
       symbol.name AS name, file.module as module
     ORDER BY
       symbol.name ASC
