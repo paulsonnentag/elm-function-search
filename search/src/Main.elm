@@ -4,9 +4,10 @@ import Http
 import Time
 import HttpBuilder exposing (withQueryParams, withExpectJson, withTimeout, toRequest)
 import Json.Decode as Decode exposing (Decoder, string, field, list, bool)
+import Json.Encode as Encode
 import Style
-import Element.Attributes exposing (attribute, padding, paddingBottom, spacing, vary)
-import Element exposing (Element, h1, el, column, text)
+import Element.Attributes exposing (attribute, property, padding, paddingBottom, paddingTop, spacing, vary)
+import Element exposing (Element, h1, h2, el, column, text)
 import Element.Events exposing (onClick, on, keyCode)
 import Element.Input as Input
 import Style.Font as Font
@@ -181,6 +182,7 @@ update msg model =
 type Styles
     = App
     | Title
+    | Subtitle
     | SearchInput
     | ResultItems
     | ResultItem
@@ -206,6 +208,8 @@ stylesheet =
             , Font.size (scale 1)
             ]
         , Style.style Title
+            [ Font.size (scale 4) ]
+        , Style.style Subtitle
             [ Font.size (scale 3) ]
         , Style.style SearchInput
             [ Font.size (scale 2)
@@ -245,12 +249,12 @@ view model =
             [ h1 Title [ paddingBottom (scale 2) ] (text "Elm function search")
             , Input.text SearchInput
                 [ attribute "autofocus" ""
+                , property "value" (Encode.string (queryValue model))
                 , padding 5
-
-                --, on "keyup" (Decode.map KeyPressed decodeKey)
+                , on "keyup" (Decode.map KeyPressed decodeKey)
                 ]
                 { onChange = ChangeQuery
-                , value = "123" -- (queryValue model)
+                , value = (queryValue model)
                 , label =
                     Input.placeholder
                         { label = Input.labelLeft (el None [ attribute "style" "display:none;" ] (text "Search"))
@@ -280,7 +284,14 @@ view model =
                             text "loading ..."
 
                 Examples { package, module_, symbol } ->
-                    text ((queryValue model))
+                    column None
+                        []
+                        [ h2 Subtitle
+                            [ paddingBottom (scale 1)
+                            , paddingTop (scale 1)
+                            ]
+                            (text "Examples")
+                        ]
             ]
 
 
