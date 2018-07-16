@@ -3,13 +3,13 @@ const cors = require('cors')
 const app = express()
 
 const examples = require('./routes/examples')
-const search = require('./routes/search')
+const symbols = require('./routes/symbols')
 
 app.use(cors())
 
 app.set('json spaces', 2);
 
-app.use('/search', search)
+app.use('/symbols', symbols)
 //app.get('/examples' examples)
 
 app.listen(3000)
