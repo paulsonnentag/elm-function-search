@@ -9,14 +9,14 @@ import Dict
 import Parser exposing (Modules)
 
 
--- basic examples --
+-- basic --
 
 
 basicModules : Modules
 basicModules =
     Dict.fromList
         [ ( "Html"
-          , { package = "elm-lang/core"
+          , { package = "elm-lang/html"
             , version = "1.0.0"
             , moduleName = "Html"
             , symbols = [ "text" ]
@@ -65,31 +65,115 @@ view = H.text "hello world"
 """
 
 
-basic : Test
-basic =
+basicTest : Test
+basicTest =
     let
         result =
-            [ { package = "elm-lang/core"
+            [ { package = "elm-lang/html"
               , moduleName = "Html"
               , symbol = "text"
               , version = "1.0.0"
               }
             ]
     in
-        describe "getReferences"
+        describe "getReferences with different module types"
             [ test "functionImport" <|
                 \_ ->
-                    Expect.equal result (Parser.getReferences basicModules functionImport)
+                    Expect.equal (Parser.getReferences basicModules functionImport) result
             , test "allInput" <|
                 \_ ->
-                    Expect.equal result (Parser.getReferences basicModules allImport)
+                    Expect.equal (Parser.getReferences basicModules allImport) result
             , test "namespaceImport" <|
                 \_ ->
-                    Expect.equal result (Parser.getReferences basicModules namespacedImport)
+                    Expect.equal (Parser.getReferences basicModules namespacedImport) result
             , test "aliasedImport" <|
                 \_ ->
-                    Expect.equal result (Parser.getReferences basicModules aliasedImport)
+                    Expect.equal (Parser.getReferences basicModules aliasedImport) result
             ]
+
+
+
+-- counterProgram --
+
+
+counterModules : Modules
+counterModules =
+    Dict.fromList
+        [ ( "Html"
+          , { package = "elm-lang/html"
+            , version = "1.0.0"
+            , moduleName = "Html"
+            , symbols = [ "beginnerProgram", "div", "button", "text" ]
+            }
+          )
+        , ( "Html.Events"
+          , { package = "elm-lang/html"
+            , version = "2.0.0"
+            , moduleName = "Html.Events"
+            , symbols = [ "onClick" ]
+            }
+          )
+        ]
+
+
+counterProgram : List Statement
+counterProgram =
+    crashableParse """
+import Html exposing (..)
+import Html.Events exposing (onClick)
+
+main =
+  beginnerProgram { model = model, view = view, update = update }
+
+
+-- MODEL
+
+model = 0
+
+
+-- UPDATE
+
+type Msg = Increment | Decrement
+
+
+update msg model =
+  case msg of
+    Increment ->
+      model + 1
+
+    Decrement ->
+      model - 1
+
+
+-- VIEW
+
+view model =
+  div []
+    [ button [ onClick Decrement ] [ text "-" ]
+    , div [] [ text (toString model) ]
+    , button [ onClick Increment ] [ text "+" ]
+    ]
+"""
+
+
+realWorldTest : Test
+realWorldTest =
+    describe "getReferences of real world apps"
+        [ test "counter program" <|
+            \_ ->
+                Expect.equal (Parser.getReferences counterModules counterProgram)
+                    [ { package = "elm-lang/html", moduleName = "Html", symbol = "beginnerProgram", version = "1.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "div", version = "1.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "button", version = "1.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html.Events", symbol = "onClick", version = "2.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "div", version = "1.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "button", version = "1.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html.Events", symbol = "onClick", version = "2.0.0" }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
+                    ]
+        ]
 
 
 
