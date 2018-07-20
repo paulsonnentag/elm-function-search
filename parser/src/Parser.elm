@@ -51,6 +51,21 @@ type alias Import =
     }
 
 
+defaultImportStatements : List Statement
+defaultImportStatements =
+    [ ImportStatement [ "Basics" ] Nothing (Just AllExport)
+    , ImportStatement [ "List" ] Nothing (Just (SubsetExport ([ TypeExport "List" Nothing, FunctionExport "::" ])))
+    , ImportStatement [ "Maybe" ] Nothing (Just (SubsetExport ([ TypeExport "Maybe" (Just (SubsetExport ([ FunctionExport "Just", FunctionExport "Nothing" ]))) ])))
+    , ImportStatement [ "Result" ] Nothing (Just (SubsetExport ([ TypeExport "Result" (Just (SubsetExport ([ FunctionExport "Ok", FunctionExport "Err" ]))) ])))
+    , ImportStatement [ "String" ] Nothing Nothing
+    , ImportStatement [ "Tuple" ] Nothing Nothing
+    , ImportStatement [ "Debug" ] Nothing Nothing
+    , ImportStatement [ "Platform" ] Nothing (Just (SubsetExport ([ TypeExport "Program" Nothing ])))
+    , ImportStatement [ "Platform", "Cmd" ] Nothing (Just (SubsetExport ([ TypeExport "Cmd" Nothing, FunctionExport "!" ])))
+    , ImportStatement [ "Platform", "Sub" ] Nothing (Just (SubsetExport ([ TypeExport "Sub" Nothing ])))
+    ]
+
+
 getReferences : Modules -> List Statement -> List Reference
 getReferences modules allStatements =
     let
@@ -59,13 +74,15 @@ getReferences modules allStatements =
                 |> List.filterNot isComment
                 |> dropModule
 
-        imports =
-            statementsWithImports
-                |> List.takeWhile isImportStatement
-                |> List.filterMap (getImport modules)
+        importStatements =
+            List.takeWhile isImportStatement statementsWithImports
 
         statements =
-            List.drop (List.length imports) statementsWithImports
+            List.drop (List.length importStatements) statementsWithImports
+
+        imports =
+            (importStatements ++ defaultImportStatements)
+                |> List.filterMap (getImport modules)
 
         scope =
             scopeFromImports imports

@@ -5,7 +5,7 @@
 - [ ] support all modules
   - [ ] effect modules
   - [ ] port module
-- [ ] add default packages
+- [x] add default packages
 - [ ] implement shadowing of variables
 
 ## Approach

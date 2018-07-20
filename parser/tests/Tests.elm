@@ -3,13 +3,88 @@ module Tests exposing (..)
 import Test exposing (..)
 import Expect
 import Ast
-import Ast.Expression as Expression
 import Ast.Statement exposing (Statement)
 import Dict
 import Parser exposing (Modules)
 
 
 -- basic --
+
+
+defaultModules : Modules
+defaultModules =
+    Dict.fromList
+        [ ( "Basics"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Basics"
+            , symbols = [ "toString", "==" ]
+            }
+          )
+        , ( "List"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "List"
+            , symbols = [ "::", "head" ]
+            }
+          )
+        , ( "Maybe"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Maybe"
+            , symbols = [ "withDefault" ]
+            }
+          )
+        , ( "Result"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Result"
+            , symbols = [ "withDefault" ]
+            }
+          )
+        , ( "String"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "String"
+            , symbols = [ "toInt" ]
+            }
+          )
+        , ( "Tuple"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Tuple"
+            , symbols = [ "first" ]
+            }
+          )
+        , ( "Debug"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Debug"
+            , symbols = [ "log" ]
+            }
+          )
+        , ( "Platform"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Platform"
+            , symbols = [ "sendToApp" ]
+            }
+          )
+        , ( "Platform.Cmd"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Platform.Cmd"
+            , symbols = [ "!", "map" ]
+            }
+          )
+        , ( "Platform.Sub"
+          , { package = "elm-lang/core"
+            , version = "1.0.0"
+            , moduleName = "Platform.Sub"
+            , symbols = [ "map" ]
+            }
+          )
+        ]
 
 
 basicModules : Modules
@@ -23,6 +98,7 @@ basicModules =
             }
           )
         ]
+        |> Dict.union defaultModules
 
 
 functionImport : List Statement
@@ -65,6 +141,25 @@ view = H.text "hello world"
 """
 
 
+defaultImport : List Statement
+defaultImport =
+    crashableParse """
+test =
+    let
+        list = 1 :: []
+        head = List.head list
+        check = 1 == 2
+        value = Maybe.withDefault (Just "hello") "default"
+        result = Result.withDefault 0 (String.toInt "123")
+        first = Tuple.first (0, 0)
+        fn = Platform.sendToApp
+        fn2 = Platform.Cmd.map
+        fn3 = Platform.Sub.map
+    in
+        Debug.log "test" Nothing
+"""
+
+
 basicTest : Test
 basicTest =
     let
@@ -89,6 +184,21 @@ basicTest =
             , test "aliasedImport" <|
                 \_ ->
                     Expect.equal (Parser.getReferences basicModules aliasedImport) result
+            , test "defaultImport" <|
+                \_ ->
+                    Expect.equal (Parser.getReferences basicModules defaultImport)
+                        [ { package = "elm-lang/core", moduleName = "List", symbol = "::", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "List", symbol = "head", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Basics", symbol = "==", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Maybe", symbol = "withDefault", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Result", symbol = "withDefault", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "String", symbol = "toInt", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Tuple", symbol = "first", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Platform", symbol = "sendToApp", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Platform.Cmd", symbol = "map", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Platform.Sub", symbol = "map", version = "1.0.0" }
+                        , { package = "elm-lang/core", moduleName = "Debug", symbol = "log", version = "1.0.0" }
+                        ]
             ]
 
 
@@ -114,6 +224,7 @@ counterModules =
             }
           )
         ]
+        |> Dict.union defaultModules
 
 
 counterProgram : List Statement
@@ -169,6 +280,7 @@ realWorldTest =
                     , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
                     , { package = "elm-lang/html", moduleName = "Html", symbol = "div", version = "1.0.0" }
                     , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
+                    , { package = "elm-lang/core", moduleName = "Basics", symbol = "toString", version = "1.0.0" }
                     , { package = "elm-lang/html", moduleName = "Html", symbol = "button", version = "1.0.0" }
                     , { package = "elm-lang/html", moduleName = "Html.Events", symbol = "onClick", version = "2.0.0" }
                     , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
