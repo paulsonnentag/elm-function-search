@@ -352,5 +352,11 @@ dropModule statements =
         (ModuleDeclaration _ _) :: rest ->
             rest
 
+        (EffectModuleDeclaration _ _ _) :: rest ->
+            rest
+
+        (PortModuleDeclaration _ _) :: rest ->
+            rest
+
         _ ->
             statements

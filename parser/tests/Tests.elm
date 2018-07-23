@@ -203,6 +203,61 @@ basicTest =
 
 
 
+-- modules --
+
+
+regularModule : List Statement
+regularModule =
+    crashableParse """
+module Foo exposing (main)
+
+main = Debug.log "test"
+"""
+
+
+portModule : List Statement
+portModule =
+    crashableParse """
+port module Foo exposing (main)
+
+main = Debug.log "test"
+"""
+
+
+effectModule : List Statement
+effectModule =
+    crashableParse """
+module Foo exposing (main)
+
+main = Debug.log "test"
+"""
+
+
+modulesTest : Test
+modulesTest =
+    let
+        result =
+            [ { package = "elm-lang/core"
+              , moduleName = "Debug"
+              , symbol = "log"
+              , version = "1.0.0"
+              }
+            ]
+    in
+        describe "getReferences should deal with different module types"
+            [ test "regularModule" <|
+                \_ ->
+                    Expect.equal (Parser.getReferences basicModules regularModule) result
+            , test "portModule" <|
+                \_ ->
+                    Expect.equal (Parser.getReferences basicModules portModule) result
+            , test "effectModule" <|
+                \_ ->
+                    Expect.equal (Parser.getReferences basicModules effectModule) result
+            ]
+
+
+
 -- counterProgram --
 
 

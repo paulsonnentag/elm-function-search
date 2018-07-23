@@ -5,8 +5,10 @@
 - [ ] support all modules
   - [ ] effect modules
   - [ ] port module
+- [ ] include line/column information in reference
 - [x] add default packages
 - [ ] implement shadowing of variables
+
 
 ## Approach
 
