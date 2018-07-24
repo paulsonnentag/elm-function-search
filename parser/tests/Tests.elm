@@ -168,6 +168,8 @@ basicTest =
               , moduleName = "Html"
               , symbol = "text"
               , version = "1.0.0"
+              , line = 4
+              , column = 6
               }
             ]
     in
@@ -187,17 +189,17 @@ basicTest =
             , test "defaultImport" <|
                 \_ ->
                     Expect.equal (Parser.getReferences basicModules defaultImport)
-                        [ { package = "elm-lang/core", moduleName = "List", symbol = "::", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "List", symbol = "head", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Basics", symbol = "==", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Maybe", symbol = "withDefault", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Result", symbol = "withDefault", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "String", symbol = "toInt", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Tuple", symbol = "first", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Platform", symbol = "sendToApp", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Platform.Cmd", symbol = "map", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Platform.Sub", symbol = "map", version = "1.0.0" }
-                        , { package = "elm-lang/core", moduleName = "Debug", symbol = "log", version = "1.0.0" }
+                        [ { package = "elm-lang/core", moduleName = "List", symbol = "::", version = "1.0.0", line = 3, column = 18 }
+                        , { package = "elm-lang/core", moduleName = "List", symbol = "head", version = "1.0.0", line = 4, column = 14 }
+                        , { package = "elm-lang/core", moduleName = "Basics", symbol = "==", version = "1.0.0", line = 5, column = 19 }
+                        , { package = "elm-lang/core", moduleName = "Maybe", symbol = "withDefault", version = "1.0.0", line = 6, column = 15 }
+                        , { package = "elm-lang/core", moduleName = "Result", symbol = "withDefault", version = "1.0.0", line = 7, column = 16 }
+                        , { package = "elm-lang/core", moduleName = "String", symbol = "toInt", version = "1.0.0", line = 7, column = 38 }
+                        , { package = "elm-lang/core", moduleName = "Tuple", symbol = "first", version = "1.0.0", line = 8, column = 15 }
+                        , { package = "elm-lang/core", moduleName = "Platform", symbol = "sendToApp", version = "1.0.0", line = 9, column = 12 }
+                        , { package = "elm-lang/core", moduleName = "Platform.Cmd", symbol = "map", version = "1.0.0", line = 10, column = 13 }
+                        , { package = "elm-lang/core", moduleName = "Platform.Sub", symbol = "map", version = "1.0.0", line = 11, column = 13 }
+                        , { package = "elm-lang/core", moduleName = "Debug", symbol = "log", version = "1.0.0", line = 13, column = 7 }
                         ]
             ]
 
@@ -241,6 +243,8 @@ modulesTest =
               , moduleName = "Debug"
               , symbol = "log"
               , version = "1.0.0"
+              , line = 3
+              , column = 6
               }
             ]
     in
@@ -328,17 +332,17 @@ realWorldTest =
         [ test "counter program" <|
             \_ ->
                 Expect.equal (Parser.getReferences counterModules counterProgram)
-                    [ { package = "elm-lang/html", moduleName = "Html", symbol = "beginnerProgram", version = "1.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html", symbol = "div", version = "1.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html", symbol = "button", version = "1.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html.Events", symbol = "onClick", version = "2.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html", symbol = "div", version = "1.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
-                    , { package = "elm-lang/core", moduleName = "Basics", symbol = "toString", version = "1.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html", symbol = "button", version = "1.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html.Events", symbol = "onClick", version = "2.0.0" }
-                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0" }
+                    [ { package = "elm-lang/html", moduleName = "Html", symbol = "beginnerProgram", version = "1.0.0", line = 5, column = 1 }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "div", version = "1.0.0", line = 30, column = 1 }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "button", version = "1.0.0", line = 31, column = 5 }
+                    , { package = "elm-lang/html", moduleName = "Html.Events", symbol = "onClick", version = "2.0.0", line = 31, column = 14 }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0", line = 31, column = 36 }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "div", version = "1.0.0", line = 32, column = 5 }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0", line = 32, column = 14 }
+                    , { package = "elm-lang/core", moduleName = "Basics", symbol = "toString", version = "1.0.0", line = 32, column = 20 }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "button", version = "1.0.0", line = 33, column = 5 }
+                    , { package = "elm-lang/html", moduleName = "Html.Events", symbol = "onClick", version = "2.0.0", line = 33, column = 14 }
+                    , { package = "elm-lang/html", moduleName = "Html", symbol = "text", version = "1.0.0", line = 33, column = 36 }
                     ]
         ]
 

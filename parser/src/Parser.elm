@@ -11,6 +11,8 @@ type alias Reference =
     , moduleName : String
     , symbol : String
     , version : String
+    , column : Int
+    , line : Int
     }
 
 
@@ -51,18 +53,22 @@ type alias Import =
     }
 
 
+defaultMeta =
+    { line = 0, col = 0 }
+
+
 defaultImportStatements : List Statement
 defaultImportStatements =
-    [ ImportStatement [ "Basics" ] Nothing (Just AllExport)
-    , ImportStatement [ "List" ] Nothing (Just (SubsetExport ([ TypeExport "List" Nothing, FunctionExport "::" ])))
-    , ImportStatement [ "Maybe" ] Nothing (Just (SubsetExport ([ TypeExport "Maybe" (Just (SubsetExport ([ FunctionExport "Just", FunctionExport "Nothing" ]))) ])))
-    , ImportStatement [ "Result" ] Nothing (Just (SubsetExport ([ TypeExport "Result" (Just (SubsetExport ([ FunctionExport "Ok", FunctionExport "Err" ]))) ])))
-    , ImportStatement [ "String" ] Nothing Nothing
-    , ImportStatement [ "Tuple" ] Nothing Nothing
-    , ImportStatement [ "Debug" ] Nothing Nothing
-    , ImportStatement [ "Platform" ] Nothing (Just (SubsetExport ([ TypeExport "Program" Nothing ])))
-    , ImportStatement [ "Platform", "Cmd" ] Nothing (Just (SubsetExport ([ TypeExport "Cmd" Nothing, FunctionExport "!" ])))
-    , ImportStatement [ "Platform", "Sub" ] Nothing (Just (SubsetExport ([ TypeExport "Sub" Nothing ])))
+    [ ImportStatement [ "Basics" ] Nothing (Just AllExport) { line = 0, column = 0 }
+    , ImportStatement [ "List" ] Nothing (Just (SubsetExport ([ TypeExport "List" Nothing, FunctionExport "::" ]))) { line = 0, column = 0 }
+    , ImportStatement [ "Maybe" ] Nothing (Just (SubsetExport ([ TypeExport "Maybe" (Just (SubsetExport ([ FunctionExport "Just", FunctionExport "Nothing" ]))) ]))) { line = 0, column = 0 }
+    , ImportStatement [ "Result" ] Nothing (Just (SubsetExport ([ TypeExport "Result" (Just (SubsetExport ([ FunctionExport "Ok", FunctionExport "Err" ]))) ]))) { line = 0, column = 0 }
+    , ImportStatement [ "String" ] Nothing Nothing { line = 0, column = 0 }
+    , ImportStatement [ "Tuple" ] Nothing Nothing { line = 0, column = 0 }
+    , ImportStatement [ "Debug" ] Nothing Nothing { line = 0, column = 0 }
+    , ImportStatement [ "Platform" ] Nothing (Just (SubsetExport ([ TypeExport "Program" Nothing ]))) { line = 0, column = 0 }
+    , ImportStatement [ "Platform", "Cmd" ] Nothing (Just (SubsetExport ([ TypeExport "Cmd" Nothing, FunctionExport "!" ]))) { line = 0, column = 0 }
+    , ImportStatement [ "Platform", "Sub" ] Nothing (Just (SubsetExport ([ TypeExport "Sub" Nothing ]))) { line = 0, column = 0 }
     ]
 
 
@@ -93,59 +99,59 @@ getReferences modules allStatements =
 getReferencesInStatement : Scope -> Statement -> List Reference
 getReferencesInStatement scope statement =
     case statement of
-        ModuleDeclaration _ _ ->
+        ModuleDeclaration _ _ _ ->
             Debug.log "unexpected module declaration" []
 
-        PortModuleDeclaration _ _ ->
+        PortModuleDeclaration _ _ _ ->
             Debug.log "unexpected module declaration" []
 
-        EffectModuleDeclaration _ _ _ ->
+        EffectModuleDeclaration _ _ _ _ ->
             Debug.log "unexpected module declaration" []
 
-        ImportStatement _ _ _ ->
+        ImportStatement _ _ _ _ ->
             Debug.log "unexpected import statement" []
 
-        TypeAliasDeclaration _ _ ->
+        TypeAliasDeclaration _ _ _ ->
             []
 
-        TypeDeclaration _ _ ->
+        TypeDeclaration _ _ _ ->
             []
 
-        PortTypeDeclaration _ _ ->
+        PortTypeDeclaration _ _ _ ->
             []
 
-        PortDeclaration _ _ _ ->
+        PortDeclaration _ _ _ _ ->
             Debug.crash "not implemented"
 
-        FunctionTypeDeclaration _ _ ->
+        FunctionTypeDeclaration _ _ _ ->
             []
 
-        FunctionDeclaration name args body ->
+        FunctionDeclaration name args body _ ->
             getReferencesInExpression scope body
 
-        InfixDeclaration _ _ _ ->
+        InfixDeclaration _ _ _ _ ->
             Debug.crash "not implemented"
 
-        Comment _ ->
+        Comment _ _ ->
             []
 
 
 getReferencesInExpression : Scope -> Expression -> List Reference
 getReferencesInExpression scope expression =
     case expression of
-        Character _ ->
+        Character _ _ ->
             []
 
-        String _ ->
+        String _ _ ->
             []
 
-        Integer _ ->
+        Integer _ _ ->
             []
 
-        Float _ ->
+        Float _ _ ->
             []
 
-        Variable nameList ->
+        Variable nameList meta ->
             let
                 name =
                     String.join "." nameList
@@ -156,13 +162,15 @@ getReferencesInExpression scope expression =
                           , moduleName = moduleName
                           , symbol = symbol
                           , version = version
+                          , line = meta.line
+                          , column = meta.column
                           }
                         ]
 
                     _ ->
                         []
 
-        Access (Variable moduleNameList) name ->
+        Access (Variable moduleNameList _) name meta ->
             let
                 moduleName =
                     String.join "." moduleNameList
@@ -177,6 +185,8 @@ getReferencesInExpression scope expression =
                               , moduleName = moduleName
                               , symbol = symbolName
                               , version = version
+                              , line = meta.line
+                              , column = meta.column
                               }
                             ]
                         else
@@ -185,45 +195,45 @@ getReferencesInExpression scope expression =
                     _ ->
                         []
 
-        List expressions ->
+        List expressions _ ->
             List.concatMap (getReferencesInExpression scope) expressions
 
-        Tuple expressions ->
+        Tuple expressions _ ->
             List.concatMap (getReferencesInExpression scope) expressions
 
-        Access expression name ->
+        Access expression name _ ->
             getReferencesInExpression scope expression
 
-        AccessFunction _ ->
+        AccessFunction _ _ ->
             []
 
-        Record entries ->
+        Record entries _ ->
             List.concatMap (\( _, expression ) -> (getReferencesInExpression scope expression)) entries
 
-        RecordUpdate name entries ->
+        RecordUpdate name entries _ ->
             List.concatMap (\( _, expression ) -> (getReferencesInExpression scope expression)) entries
 
-        If condition trueCase falseCase ->
+        If condition trueCase falseCase _ ->
             (getReferencesInExpression scope condition)
                 ++ (getReferencesInExpression scope trueCase)
                 ++ (getReferencesInExpression scope falseCase)
 
-        Let entries body ->
+        Let entries body _ ->
             (List.concatMap (\( _, value ) -> (getReferencesInExpression scope value)) entries)
                 ++ (getReferencesInExpression scope body)
 
-        Case value cases ->
+        Case value cases _ ->
             (getReferencesInExpression scope value)
                 ++ (List.concatMap (\( _, body ) -> (getReferencesInExpression scope body)) cases)
 
-        Lambda args body ->
+        Lambda args body _ ->
             (getReferencesInExpression scope body)
 
-        Application function arg ->
+        Application function arg _ ->
             (getReferencesInExpression scope function)
                 ++ (getReferencesInExpression scope arg)
 
-        BinOp operand1 operator operand2 ->
+        BinOp operand1 operator operand2 _ ->
             (getReferencesInExpression scope operand1)
                 ++ (getReferencesInExpression scope operator)
                 ++ (getReferencesInExpression scope operand2)
@@ -309,7 +319,7 @@ addExportsToScope module_ exports_ scope =
 isComment : Statement -> Bool
 isComment statement =
     case statement of
-        Comment _ ->
+        Comment _ _ ->
             True
 
         _ ->
@@ -319,7 +329,7 @@ isComment statement =
 isImportStatement : Statement -> Bool
 isImportStatement statement =
     case statement of
-        ImportStatement _ _ _ ->
+        ImportStatement _ _ _ _ ->
             True
 
         _ ->
@@ -329,7 +339,7 @@ isImportStatement statement =
 getImport : Modules -> Statement -> Maybe Import
 getImport modules statement =
     case statement of
-        ImportStatement moduleName alias exports ->
+        ImportStatement moduleName alias exports _ ->
             case Dict.get (String.join "." moduleName) modules of
                 Just module_ ->
                     Just
@@ -349,13 +359,13 @@ getImport modules statement =
 dropModule : List Statement -> List Statement
 dropModule statements =
     case statements of
-        (ModuleDeclaration _ _) :: rest ->
+        (ModuleDeclaration _ _ _) :: rest ->
             rest
 
-        (EffectModuleDeclaration _ _ _) :: rest ->
+        (EffectModuleDeclaration _ _ _ _) :: rest ->
             rest
 
-        (PortModuleDeclaration _ _) :: rest ->
+        (PortModuleDeclaration _ _ _) :: rest ->
             rest
 
         _ ->
