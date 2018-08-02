@@ -1,5 +1,6 @@
-module Parser exposing (getReferences, scopeFromImports, Modules)
+module Parser exposing (getReferences, parseReferences, scopeFromImports, Module, Modules, Reference)
 
+import Ast
 import Ast.Statement exposing (Statement(..), ExportSet(..))
 import Ast.Expression exposing (Expression(..))
 import List.Extra as List
@@ -53,10 +54,6 @@ type alias Import =
     }
 
 
-defaultMeta =
-    { line = 0, col = 0 }
-
-
 defaultImportStatements : List Statement
 defaultImportStatements =
     [ ImportStatement [ "Basics" ] Nothing (Just AllExport) { line = 0, column = 0 }
@@ -70,6 +67,16 @@ defaultImportStatements =
     , ImportStatement [ "Platform", "Cmd" ] Nothing (Just (SubsetExport ([ TypeExport "Cmd" Nothing, FunctionExport "!" ]))) { line = 0, column = 0 }
     , ImportStatement [ "Platform", "Sub" ] Nothing (Just (SubsetExport ([ TypeExport "Sub" Nothing ]))) { line = 0, column = 0 }
     ]
+
+
+parseReferences : Modules -> String -> Result (List String) (List Reference)
+parseReferences modules string =
+    case Ast.parse string of
+        Ok ( _, _, statements ) ->
+            Ok (getReferences modules statements)
+
+        Err ( _, _, errors ) ->
+            Err errors
 
 
 getReferences : Modules -> List Statement -> List Reference
