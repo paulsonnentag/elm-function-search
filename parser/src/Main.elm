@@ -74,10 +74,10 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ParseFileRequest requestId modules file ->
+        ParseFileRequest requestId modules source ->
             let
                 result =
-                    Parser.parseReferences modules file
+                    Parser.parseReferences modules source
             in
                 ( model, outputPort (encodeOutputMessage (ParseFileResponse requestId result)) )
 
@@ -110,7 +110,7 @@ inputMessageDecoder =
     Decode.map3 ParseFileRequest
         (Decode.field "requestId" Decode.string)
         (Decode.field "modules" (Decode.dict moduleDecoder))
-        (Decode.field "file" Decode.string)
+        (Decode.field "source" Decode.string)
 
 
 moduleDecoder : Decoder Module

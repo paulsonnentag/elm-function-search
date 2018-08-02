@@ -1,0 +1,16 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Paul Sonnentag <Paul.Sonnentag@googlemail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "compare-versions": "^3.3.0",
+    "lodash": "^4.17.10",
+    "node-fetch": "^2.2.0"
+  }
+}

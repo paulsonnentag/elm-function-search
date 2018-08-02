@@ -70,8 +70,8 @@ defaultImportStatements =
 
 
 parseReferences : Modules -> String -> Result (List String) (List Reference)
-parseReferences modules string =
-    case Ast.parse string of
+parseReferences modules source =
+    case Ast.parse source of
         Ok ( _, _, statements ) ->
             Ok (getReferences modules statements)
 

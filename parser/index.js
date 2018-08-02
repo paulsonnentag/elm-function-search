@@ -1,73 +1,38 @@
 const {Main} = require('./build/worker.js')
 
 const worker = Main.worker();
+const pendingRequests = {}
 
-const modules = {
-  "Basics" : {
-    package : "elm-lang/core",
-    version : "1.0.0",
-    moduleName : "Basics",
-    symbols : [ "toString", "==" ]
-  },
-  "Html" : {
-    package : "elm-lang/html",
-    version : "1.0.0",
-    moduleName : "Html",
-    symbols : [ "beginnerProgram", "div", "button", "text" ]
-  },
-  "Html.Events":  {
-    package : "elm-lang/html",
-    version : "2.0.0",
-    moduleName : "Html.Events",
-    symbols : [ "onClick" ]
+const getId = (() => {
+  let id = 0
+  return () => id++
+})()
+
+worker.ports.outputPort.subscribe(({ requestId, type, data }) => {
+  const request = pendingRequests[requestId]
+  delete pendingRequests[requestId]
+
+  switch (type) {
+    case 'error':
+      pendingRequests.reject(data.errors)
+      return
+
+    case 'success':
+      pendingRequests.resolve(data.references)
+      return
   }
+})
+
+function parseReferences (modules, source) {
+  return new Promise((resolve, reject) => {
+    const requestId = getId()
+
+    pendingRequests[requestId] = {resolve, reject}
+
+    worker.ports.inputPort.send({ requestId, modules, source })
+  })
 }
 
-const source = `import Html exposing (..)
-import Html.Events exposing (onClick)
-
-main =
-beginnerProgram { model = model, view = view, update = update }
-
-
--- MODEL
-
-model = 0
-
-
--- UPDATE
-
-type Msg = Increment | Decrement
-
-
-update msg model =
-case msg of
-  Increment ->
-    model + 1
-
-  Decrement ->
-    model - 1
-
-
--- VIEW
-
-view model =
-div []
-  [ button [ onClick Decrement ] [ text "-" ]
-  , div [] [ text (toString model) ]
-  , button [ onClick Increment ] [ text "+" ]
-  ]
-`
-
-worker.ports.inputPort.send({
-  requestId: "123",
-  modules,
-  file: source
-})
-
-
-worker.ports.outputPort.subscribe((references) => {
-  console.log(JSON.stringify(references, null, 2))
-})
-
-
+module.exports = {
+  parseReferences
+}
