@@ -14,11 +14,11 @@ worker.ports.outputPort.subscribe(({ requestId, type, data }) => {
 
   switch (type) {
     case 'error':
-      pendingRequests.reject(data.errors)
+      request.reject(data.errors)
       return
 
     case 'success':
-      pendingRequests.resolve(data.references)
+      request.resolve(data.references)
       return
   }
 })

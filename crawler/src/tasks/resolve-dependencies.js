@@ -1,27 +1,18 @@
 const _ = require('lodash/fp')
 const fetch = require('node-fetch')
 const compareVersions = require('compare-versions')
+const registry = require('../utils/package-registry')
+const CrawlerError = require('../utils/crawler-error')
 
-class ResolveError extends Error {}
-
-const getPackages = _.memoize(async () => _.keyBy('name', await fetchAllPackages()))
-
-function fetchAllPackages () {
-  return fetch('http://package.elm-lang.org/all-packages')
-    .then(res => res.json())
-}
-
-function fetchModulesOfPackage (name, version) {
-  return fetch (`http://package.elm-lang.org/packages/${name}/${version}/documentation.json`)
-    .then(res => res.json())
-}
-
-async function getAllModules (dependencies) {
-  const packages = await getPackages()
+async function resolvedDependencies (dependencies) {
+  const packages = await registry.getAllPackages()
   const resolvedDependencies = getResolvedDependencies(packages, dependencies)
   const modules = await Promise.all(_.map(({name, version}) => getModulesOfPackage(name, version), resolvedDependencies))
 
-  return _.flatten(modules)
+  return _.flow(
+    _.flatten,
+    _.keyBy('moduleName')
+  )(modules)
 }
 
 function getResolvedDependencies (packages, dependencies) {
@@ -29,7 +20,7 @@ function getResolvedDependencies (packages, dependencies) {
     _.toPairs,
     _.map(([packageName, version]) => {
       if (!packages[packageName]) {
-        throw new ResolveError(`Dependency '${packageName}' doesn't exist`)
+        throw new CrawlerError(`Dependency '${packageName}' doesn't exist`)
       }
 
       return {
@@ -41,7 +32,7 @@ function getResolvedDependencies (packages, dependencies) {
 }
 
 async function getModulesOfPackage (name, version) {
-  const modules = await fetchModulesOfPackage(name, version)
+  const modules = await registry.fetchModulesOfPackage(name, version)
 
   return _.map(module => {
     const symbols = _.map(({name}) => name, module.values)
@@ -62,7 +53,7 @@ function getAbsoluteVersion (package, version) {
   const match = version.match(VERSION_REGEX)
 
   if (!match) {
-    throw new ResolveError(`Dependency '${package.name}' has an invalid version format '${version}'`)
+    throw new CrawlerError(`Dependency '${package.name}' has an invalid version format '${version}'`)
   }
 
   const [, minVersion, lowerComparator, upperComparator, maxVersion] = match
@@ -80,13 +71,10 @@ function getAbsoluteVersion (package, version) {
   }, versions)
 
   if (!absoluteVersion) {
-    throw new ResolveError(`Dependency '${package.name}' has no matching version for '${version}'`)
+    throw new CrawlerError(`Dependency '${package.name}' has no matching version for '${version}'`)
   }
 
   return absoluteVersion
 }
 
-module.exports = {
-  getAllModules,
-  ResolveError
-}
+module.exports = resolvedDependencies

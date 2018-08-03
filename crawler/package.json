@@ -10,7 +10,10 @@
   "license": "MIT",
   "dependencies": {
     "compare-versions": "^3.3.0",
+    "fs-extra": "^7.0.0",
+    "glob": "^7.1.2",
     "lodash": "^4.17.10",
-    "node-fetch": "^2.2.0"
+    "node-fetch": "^2.2.0",
+    "simple-git": "^1.96.0"
   }
 }

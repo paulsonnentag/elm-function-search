@@ -14,7 +14,7 @@ port inputPort : (Decode.Value -> msg) -> Sub msg
 
 
 type OutputMessage
-    = ParseFileResponse String (Result (List String) (List Reference))
+    = ParseFileResponse Int (Result (List String) (List Reference))
 
 
 encodeOutputMessage : OutputMessage -> Encode.Value
@@ -22,14 +22,14 @@ encodeOutputMessage msg =
     case msg of
         ParseFileResponse requestId result ->
             Encode.object
-                ([ ( "requestId", Encode.string requestId )
+                ([ ( "requestId", Encode.int requestId )
                  ]
                     ++ case result of
                         Ok references ->
                             [ ( "type", Encode.string "success" )
                             , ( "data"
                               , Encode.object
-                                    [ ( "results", Encode.list (List.map encodeReference references) )
+                                    [ ( "references", Encode.list (List.map encodeReference references) )
                                     ]
                               )
                             ]
@@ -67,7 +67,7 @@ init =
 
 
 type Msg
-    = ParseFileRequest String Modules String
+    = ParseFileRequest Int Modules String
     | NoOp
 
 
@@ -108,7 +108,7 @@ decodeInputMessage value =
 inputMessageDecoder : Decoder Msg
 inputMessageDecoder =
     Decode.map3 ParseFileRequest
-        (Decode.field "requestId" Decode.string)
+        (Decode.field "requestId" Decode.int)
         (Decode.field "modules" (Decode.dict moduleDecoder))
         (Decode.field "source" Decode.string)
 

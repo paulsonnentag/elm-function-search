@@ -356,8 +356,7 @@ getImport modules statement =
                         }
 
                 Nothing ->
-                    Debug.log ("ignore unresolved module: " ++ (toString moduleName))
-                        Nothing
+                    Nothing
 
         _ ->
             Nothing
