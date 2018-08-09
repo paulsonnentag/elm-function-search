@@ -4,9 +4,9 @@ const fs = require('fs-extra')
 const path = require('path')
 const glob = util.promisify(require('glob'))
 const git = require('simple-git/promise')
-const registry = require('../utils/package-registry')
+const registry = require('../../utils/package-registry')
 
-const { TEMP_DIR } = require('../../config.json')
+const { TEMP_DIR } = require('../../../config.json')
 
 async function cloneRepo (name) {
   const repoDir = path.join(TEMP_DIR, name)

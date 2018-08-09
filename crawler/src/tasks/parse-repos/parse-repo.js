@@ -4,7 +4,7 @@ const _ = require('lodash/fp')
 const cloneRepo = require('./clone-repo')
 const resolveDependencies = require('./resolve-dependencies')
 const cleanupRepo = require('./cleanup-repo')
-const parser = require('../../../parser')
+const parser = require('../../../../parser')
 
 async function parseRepo (repoName) {
   const elmPackages = await cloneRepo(repoName)

@@ -1,0 +1,5 @@
+{
+  "TEMP_DIR" : "/tmp/elm-function-search-repos",
+  "GITHUB_CLIENT_ID": "[ your github id]",
+  "GITHUB_CLIENT_SECRET": "[ your github secret ]"
+}

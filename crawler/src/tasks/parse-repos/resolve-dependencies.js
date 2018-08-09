@@ -1,8 +1,8 @@
 const _ = require('lodash/fp')
 const fetch = require('node-fetch')
 const compareVersions = require('compare-versions')
-const registry = require('../utils/package-registry')
-const CrawlerError = require('../utils/crawler-error')
+const registry = require('../../utils/package-registry')
+const CrawlerError = require('../../utils/crawler-error')
 
 async function resolvedDependencies (dependencies) {
   const packages = await registry.getAllPackages()
