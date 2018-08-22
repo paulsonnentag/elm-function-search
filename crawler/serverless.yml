@@ -1,0 +1,76 @@
+service: elm-function-search-crawler
+
+frameworkVersion: "=1.30.1"
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  memorySize: 512
+  region: us-west-1
+
+  environment:
+    DATABASE_HOST:
+      Fn::GetAtt:
+        - pgDB
+        - Endpoint.Address
+    DATABASE_USER: "master" #${ssm:DATABASE_USER}
+    DATABASE_SECRET: "test12345" #${ssm:DATABASE_SECRET}
+    DATABASE_NAME: "elmFunctionSearch"
+    TEMP_REPO_DIR: "/tmp/repos"
+    NODE_ENV: "lambda"
+
+functions:
+  fetchRepos:
+    handler: handler.fetchRepos
+
+  importRepo:
+    handler: handler.importRepo
+    timeout: 5
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - RepoQueue
+              - Arn
+          batchSize: 1
+
+resources:
+ Resources:
+  pgSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Acess to Postgres
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '5432'
+        ToPort: '5432'
+        CidrIp: 0.0.0.0/0
+
+  pgDB:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      DBName: "elmFunctionSearch"
+      AllocatedStorage: 5
+      DBInstanceClass: "db.t2.micro"
+      Engine: "postgres"
+      EngineVersion: "9.5.4"
+      MasterUsername: "master" #${ssm:DATABASE_USER}
+      MasterUserPassword: "test12345" #${ssm:DATABASE_SECRET}
+      VPCSecurityGroups:
+      - Fn::GetAtt:
+        - pgSecurityGroup
+        - GroupId
+    DeletionPolicy: "Delete"
+
+  RepoQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: "RepoQueue"
+
+ Outputs:
+    pgEndpoint:
+      Description: "JDBC connection string for database"
+      Value:
+        Fn::GetAtt:
+          - pgDB
+          - Endpoint.Address

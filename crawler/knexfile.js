@@ -1,7 +1,6 @@
-// Update with your config settings.
+const {DATABASE_HOST, DATABASE_USER, DATABASE_SECRET, DATABASE_NAME} = process.env
 
 module.exports = {
-
   development: {
     client: 'pg',
     connection: 'postgres://localhost/elm_function_search_development',
@@ -11,12 +10,12 @@ module.exports = {
     useNullAsDefault: true
   },
 
-  production: {
+  cloud: {
     client: 'pg',
-    connection: process.env.DATABASE_URL,
+    connection: `postgres://${DATABASE_USER}:${DATABASE_SECRET}@${DATABASE_HOST}:5432/${DATABASE_NAME}`,
     migrations: {
       directory: './migrations'
     },
     useNullAsDefault: true
   }
-};
+}
