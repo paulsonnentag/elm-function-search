@@ -18,8 +18,8 @@ async function hasGit () {
   return true
 }
 
-module.exports = async (...args) => {
+module.exports = async (baseDir) => {
   await ensureGitExists()
 
-  return git.apply(null, args)
+  return git(baseDir)
 }

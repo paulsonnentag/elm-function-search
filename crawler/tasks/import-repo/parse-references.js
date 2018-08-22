@@ -9,7 +9,7 @@ module.exports = async (modules, filePath) => {
 }
 
 async function getAst (filePath) {
-  const {stdout, stderr} = await exec(`cat ${filePath} | ${path.join(__dirname, 'lib/elm-format')} --stdin --json`)
+  const {stdout, stderr} = await exec(`node ${path.join(__dirname, 'cat.js')} ${filePath} | ${path.join(__dirname, 'lib/elm-format')} --stdin --json`)
 
   if (stderr) {
     return Promise.reject(stderr)

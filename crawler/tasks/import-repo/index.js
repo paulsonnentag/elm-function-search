@@ -21,11 +21,12 @@ async function parseReferencesOfElmPackage ({elmPackageFile, files}) {
   const elmPackage = await fs.readJson(elmPackageFile)
   const modules = await resolveDependencies(elmPackage.dependencies)
 
-
   return await Promise.all(_.map(async filePath => {
     const result = await (parseReferences(modules, filePath)
       .then((references) => ({type: 'success', data: {references}}))
       .catch((errors) => {
+        console.log('failed to parse file', filePath, errors)
+
         return {type: 'error', data: {errors}}
       }))
 

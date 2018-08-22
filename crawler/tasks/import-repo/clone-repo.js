@@ -52,7 +52,7 @@ async function getElmPackages (repoDir) {
   const files = await glob(path.join(repoDir, '**/*.elm'))
 
   // group files by root to which they belong
-  const elmPackages = _.flow(
+  return _.flow(
     _.flatMap((file) => {
       const rootDir = _.find((rootDir) => _.startsWith(rootDir, file), rootDirs)
 
@@ -75,6 +75,4 @@ async function getElmPackages (repoDir) {
       }
     })
   )(files)
-
-  return elmPackages
 }

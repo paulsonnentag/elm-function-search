@@ -7,10 +7,9 @@ Elm function search allows you to find code examples for all Elm functions
 search frontend
 
 
-## db
+## crawler
 
-neo4j database service
-
+aws lambda based repo crawler/parser
 
 ## api
 

@@ -7,8 +7,8 @@ module.exports = async (knex, {repo, references, commitHash}) => {
   await updateReferences(knex, {repo, references, commitHash})
 }
 
-function updateRepo (knex, {owner, name, lastUpdated, stars, license}) {
-  return knex.raw(`
+async function updateRepo (knex, {owner, name, lastUpdated, stars, license}) {
+  await knex.raw(`
     INSERT INTO repos (owner, name, last_updated, stars, license)
     VALUES
       ('${owner}', '${name}', TIMESTAMP '${formatDate(lastUpdated)}', ${stars}, ${license ? `'${license}'` : 'null'})
@@ -35,14 +35,12 @@ async function updateReferences (knex, {repo, references, commitHash}) {
     })
     .del())
 
-  console.log('deleted old references')
-
   const rows = getReferencesRows({repo, references, commitHash})
 
   await (knex('references')
     .insert(rows))
 
-  console.log('inserted new')
+  console.log(`inserted ${rows.length} reference(s)`)
 }
 
 function getReferencesRows ({repo, references, commitHash}) {

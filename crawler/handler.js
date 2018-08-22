@@ -1,6 +1,10 @@
 const knex = require('knex')(require('./knexfile')[process.env.NODE_ENV || 'development']);
 const dbMigration = knex.migrate.latest()
 
+const util = require('util')
+const exec = util.promisify(require('child_process').exec)
+
+
 // IMPORT REPO
 
 const importRepo = require('./tasks/import-repo')
@@ -25,6 +29,10 @@ async function importRepoHandler (event, context) {
 const fetchRepos = require('./tasks/fetch-repos')
 
 async function fetchReposHandler (event, context) {
+
+
+
+  console.log(await exec('./tasks/import-repo/lib/elm-format-0.18'))
 
   context.succeed('done')
 
