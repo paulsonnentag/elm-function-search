@@ -10,7 +10,7 @@ module.exports = {
     useNullAsDefault: true
   },
 
-  cloud: {
+  lambda: {
     client: 'pg',
     connection: `postgres://${DATABASE_USER}:${DATABASE_SECRET}@${DATABASE_HOST}:5432/${DATABASE_NAME}`,
     migrations: {

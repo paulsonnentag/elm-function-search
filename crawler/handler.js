@@ -17,7 +17,7 @@ async function importRepoHandler (event, context) {
     return
   }
 
-  const repo = event.Records[0].messageAttributes
+  const repo = JSON.parse(event.Records[0].messageBody)
 
   await importRepo(knex, repo)
     .then(() => context.succeed('done'))
@@ -29,14 +29,13 @@ async function importRepoHandler (event, context) {
 const fetchRepos = require('./tasks/fetch-repos')
 
 async function fetchReposHandler (event, context) {
+  console.log('start fetch repos')
 
+  await fetchRepos()
+    .then(() => context.succeed('done'))
+    .catch((err) => context.fail(err))
 
-
-  console.log(await exec('./tasks/import-repo/lib/elm-format-0.18'))
-
-  context.succeed('done')
-
-  callback(null, response)
+  console.log('done fetch')
 }
 
 module.exports = {

@@ -11,7 +11,7 @@
   "author": "Paul Sonnentag <Paul.Sonnentag@googlemail.com>",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.293.0",
+    "aws-sdk": "^2.305.0",
     "compare-versions": "^3.3.0",
     "fs-extra": "^7.0.0",
     "glob": "^7.1.2",
